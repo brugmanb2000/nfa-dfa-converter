@@ -23,7 +23,7 @@ public class NFADriver {
 	 */
 	public static void main(String[] args) throws FileNotFoundException {
 		//The file name is passed as an argument
-		String fileName = args[0];
+		String fileName = "tests/p2tc0.txt";
 		File file = new File(fileName);
 		if(file.exists()){
 			//create a DFA instance -- you need to write DFA.java that

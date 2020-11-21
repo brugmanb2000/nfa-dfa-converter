@@ -1,30 +1,48 @@
 package fa.nfa;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 
 import fa.FAInterface;
 import fa.State;
 import fa.dfa.DFA;
-import fa.dfa.DFAState;
+
+
+/**
+ * This class is used to create and NFA and also to convert the NFA created into a DFA
+ * 
+ * @author Brandon Brugman, Will Lawrence
+ *
+ */
+
+
 
 public class NFA implements FAInterface {
 
-	public Set<NFAState> states;
+	private Set<NFAState> states;
 	private NFAState start;
 	private Set<Character> alphabet;
 
+	/**
+	 * Creates an NFA object
+	 */
 	public NFA() {
 		states = new LinkedHashSet<NFAState>();
 		alphabet = new LinkedHashSet<Character>();
 	}
 
+	/**
+	 * @return NFAState start state
+	 */
 	public NFAState getStart() {
 		return start;
 	}
-
+	
+	/**
+	 * @param String name: Adds a NFA State under this name to the NFA as a start state
+	 */
 	@Override
 	public void addStartState(String name) {
 		NFAState startState = checkIfExists(name);
@@ -36,7 +54,9 @@ public class NFA implements FAInterface {
 			this.start = startState;
 		}
 	}
-
+	/**
+	 * @param String name: Adds a NFA State under this name to the NFA as a state
+	 */
 	@Override
 	public void addState(String name) {
 		NFAState state = checkIfExists(name);
@@ -46,6 +66,9 @@ public class NFA implements FAInterface {
 		}
 	}
 
+	/**
+	 * @param String name: Adds a NFA State under this name to the NFA as a final state
+	 */
 	@Override
 	public void addFinalState(String name) {
 		NFAState state = checkIfExists(name);
@@ -59,6 +82,11 @@ public class NFA implements FAInterface {
 		}
 	}
 
+	/**
+	 * @param: fromState: adds transition from original state
+	 * @param: onSymb: the alphabet symbol to add the transition to
+	 * @param: toState: the state the alphabet symbol will transition to
+	 */
 	@Override
 	public void addTransition(String fromState, char onSymb, String toState) {
 		NFAState from = checkIfExists(fromState);
@@ -78,6 +106,10 @@ public class NFA implements FAInterface {
 		}		
 	}
 
+	/**
+	 * @param String name: This is the name of the NFA State you are checking if exists
+	 * @return: Returns the NFAState if it exists
+	 */
 	private NFAState checkIfExists(String name){
 		NFAState ret = null;
 		for(NFAState s : states){
@@ -89,15 +121,21 @@ public class NFA implements FAInterface {
 		return ret;
 	}
 
+	/**
+	 * @return: Set of all states in the NFA
+	 */
 	@Override
 	public Set<NFAState> getStates() {
-		Set<NFAState> retVal = new TreeSet<NFAState>();
+		Set<NFAState> retVal = new LinkedHashSet<NFAState>();
 		for (NFAState x : states) {
 			retVal.add(x);
 		}
 		return retVal;
 	}
 
+	/**
+	 * @return: Returns the final states of your NFA
+	 */
 	@Override
 	public LinkedHashSet<NFAState> getFinalStates() {
 		LinkedHashSet<NFAState> retVal = new LinkedHashSet<NFAState>();
@@ -109,11 +147,18 @@ public class NFA implements FAInterface {
 		return retVal;
 	}
 
+	
+	/**
+	 * @return: Returns your start state
+	 */
 	@Override
 	public State getStartState() {
 		return start;
 	}
 
+	/**
+	 * @return: Returns the alphabet characters of our NFA
+	 */
 	@Override
 	public Set<Character> getABC() {
 		Set<Character> retVal = new TreeSet<Character>();
@@ -123,137 +168,175 @@ public class NFA implements FAInterface {
 		return retVal;
 	}
 
+	/**
+	 * @return DFA: A DFA equivelent of the current NFA
+	 */
 	public DFA getDFA() {
 		DFA dfa = new DFA();
-		LinkedHashSet<String> usedStates = new LinkedHashSet<String>();
-		LinkedHashSet<NFAState> empty = new LinkedHashSet<NFAState>();
-		empty.add(new NFAState(""));
+		Queue <LinkedHashSet<NFAState>> queue = new LinkedList<LinkedHashSet<NFAState>>(); // Used for BFS
+		LinkedHashSet<NFAState> startState = new LinkedHashSet<NFAState>(); // Collects start state
+		LinkedHashSet<LinkedHashSet<NFAState>> stateSet = new LinkedHashSet<LinkedHashSet<NFAState>>(); // Used for checking all stored states that have been found
+		Boolean emptyStateFound = false; // If empty state is found, we know to track for it
 
 
-		// Loop through all states/transitions
-		for (NFAState x: states) {
-			for(Character y: alphabet) {
-				LinkedHashSet<NFAState> state = new LinkedHashSet<NFAState>();
-				state.add(x);				
-				LinkedHashSet<NFAState> nextState = x.getTransitions(y);
+		// Get E-Closure for start
+		startState = start.getEClosure(startState);
+		queue.add(startState);
+		stateSet.add(startState);
+		// Check if a final states and add if so
+		for (NFAState y: getFinalStates()) {
+				for (NFAState z: queue.peek())
+					if (y.equals(z)) {
+						dfa.addFinalState(startState.toString());
+						break;
+					}
+			}
 
-				if (nextState == null) {
-					nextState = empty;
+		// Add the start state as a start state
+		dfa.addStartState(startState.toString());
+
+		while (!queue.isEmpty()) {
+			LinkedHashSet<NFAState> poppedSet = new LinkedHashSet<NFAState>();
+			poppedSet = queue.remove();
+			// Find all the states with EClosure through the start state's initial transitions
+			for (char x: getABC()) {
+
+				// Create blank list and add transitions to it
+				LinkedHashSet<NFAState> a = new LinkedHashSet<NFAState>();
+				a.addAll(addTransitions(poppedSet, x));
+				boolean finalStateFound = false;
+
+				// If the item exists, ignore it
+				if ((!checkIfExists(a, stateSet))) {
+					
+					// if a isn't blank
+					if (a.size() != 0) {
+						
+					// If final state, add as a final state
+					for (NFAState y: getFinalStates()) {
+						if (a.contains(y)) {
+							dfa.addFinalState(a.toString());
+							finalStateFound = true;
+							queue.add(a);
+							stateSet.add(a);
+							break;
+						}
+					}
+
+						// If not a final state, add as a normal state
+						if (finalStateFound == false) {
+							stateSet.add(a);
+							queue.add(a);
+							dfa.addState(a.toString());
+						}
+				}
+				}
+				
+				// DFA doesn't need the empty string, so break if it is found
+				if (x == 'e') {
+					break;
+				}
+				
+				// Check for empty state
+				if (a.size() == 0 && emptyStateFound == false) {
+					emptyStateFound = true;
+					dfa.addState("[]");
+					dfa.addTransition(poppedSet.toString(), x, "[]");
+				// if empty state is found, don't add it again
+				} else if (a.size() == 0) {
+					dfa.addTransition(poppedSet.toString(), x, "[]");
+				}
+				// else if empty state is not found, add as normal
+				else {
+					dfa.addTransition(poppedSet.toString(), x, filter(a, stateSet).toString());
 				}
 
-				// Check if current state is in the dfa
-				if (!usedStates.contains(state.toString())) {
-					usedStates.add(state.toString());
+			}
 
-					Boolean isFinalState = false;
-					Boolean isStartState = false;
-					for (NFAState i: state) {
-						if (this.getFinalStates().contains(i)) {
-							isFinalState = true;
-						}
-
-						if (this.getStart() == x) {
-							isStartState = true;
-						}
-					}
-					if (isFinalState == true) {
-						dfa.addFinalState(state.toString());
-						if (isStartState == true) {
-							dfa.addStartState(state.toString());
-						}
-					} else {
-
-						if (isStartState == true) {
-							dfa.addStartState(state.toString());
-						}
-						else {
-							dfa.addState(state.toString());
-						}	
-					}
+		}
+		
+		// If empty state is found, fill out the rest of the null spaces to avoid error
+		if (emptyStateFound == true) {
+			for (char x: getABC()) {
+				if (x == 'e') {
+					break;
 				}
-
-				// Check if next state is in the dfa
-				if (!usedStates.contains(nextState.toString())) {
-					usedStates.add(nextState.toString());
-
-					Boolean isFinalState = false;
-					Boolean isStartState = false;
-					for (NFAState i: nextState) {
-						if (this.getFinalStates().contains(i)) {
-							isFinalState = true;
-						}
-					}
-					if (isFinalState == true) {
-						dfa.addFinalState(nextState.toString());
-					} else {
-						dfa.addState(nextState.toString());
-					}
-
-				}
-				dfa.addTransition(state.toString(), y, nextState.toString());
+				dfa.addTransition("[]", x, "[]");
 			}
 		}
-
-		// Get ECLosure for Start State
-		LinkedHashSet<NFAState> startEClose = new LinkedHashSet<NFAState>();
-
-		empty.add(new NFAState(""));
-		startEClose.add(start);
-		startEClose = start.getEClosure(startEClose);
-		dfa.addStartState(startEClose.toString());
-
-
-
-
-		/*
-		// Get States from EClosure
-		for (Character b: alphabet) {
-			LinkedHashSet<State> validStates = new LinkedHashSet<State>();
-			for (NFAState c: startEClose) {
-				if (c.getTransitions(b) != null) {
-					validStates.add(c);
-				}
-			}
-		}
-		 */
-
-
-		/*	
-		// Repeat for all other states
-		for (NFAState x: states) {
-			if (!x.equals(getStartState())) {
-				LinkedHashSet<NFAState> currentStateEClose = new LinkedHashSet<NFAState>();
-				currentStateEClose.add(x);
-				currentStateEClose = x.getEClosure(currentStateEClose);
-				if (!dfa.getStates().equals(currentStateEClose)) {
-					if (this.getFinalStates().contains(x)) {
-						dfa.addFinalState(currentStateEClose.toString());
-					} else {
-						dfa.addState(currentStateEClose.toString());
-					}
-				}
-			}
-		}
-		 */
-
-		dfa.getStates().remove(empty);
-		dfa.getABC().remove('e');
 		return dfa;
 	}
 
-	private LinkedHashSet<NFAState> getNextState(NFAState initialState, Character x) {
-		LinkedHashSet<NFAState> nextNode = initialState.getTransitions(x);
-		nextNode = initialState.getEClosure(nextNode);
-		return nextNode;
+	/**
+	 * Adds all the transitions/eclosures of transitions and returns the set of transitions.
+	 * @param LinkedHashSet initialState: Use current set of states
+	 * @param Character x: choose a transition to look at
+	 * @return returns the transitions unless looking at the empty string and all the contents are already inside of the initial state
+	 */
+	private LinkedHashSet<NFAState> addTransitions (LinkedHashSet<NFAState> initialState, char x) {
+		LinkedHashSet<NFAState> transitionState = new LinkedHashSet<NFAState>();
+		for (NFAState b: initialState) {
+			if (!(b.getTransitions(x) == null)) {
+				transitionState.addAll(getEClosure(b.getTransitions(x)));
+			}
+
+		}
+		
+		if (x == 'e') {
+			if (initialState.containsAll(transitionState)) {
+				return initialState;
+			}
+		}
+
+		return transitionState;	
 	}
 
-}
-
-class OrderComp implements Comparator<NFAState> {
-
-	@Override
-	public int compare(NFAState arg0, NFAState arg1) {
-		return arg0.compareTo(arg1);
+	/**
+	 * Collects the eclosure of a given node
+	 * @param: Node you need an eclosure for
+	 * @return: list of the eclosures
+	 */
+	private LinkedHashSet<NFAState> getEClosure (LinkedHashSet<NFAState> states) {
+		LinkedHashSet<NFAState> eClosedStates = new LinkedHashSet<NFAState>();
+		for (NFAState x: states) {
+			eClosedStates.addAll(x.getEClosure(states));
+		}
+		return eClosedStates;
 	}
 
+	/**
+	 * This is used to test whether a certain set is already in your current stateSet
+	 * @param LinkedHashSet test: The current set you are testing if is already in your stateSet
+	 * @param LinkedHashSet stateSet: The current list of sets you have
+	 * @return boolean if the test set is already in your stateSet or not
+	 */
+	private Boolean checkIfExists(LinkedHashSet<NFAState> test, LinkedHashSet<LinkedHashSet<NFAState>> stateSet) {
+		Boolean exists = false;
+		for (Set<NFAState> x: stateSet) {
+			if (x.containsAll(test) && test.containsAll(x)) {
+				exists = true;
+			}
+		}
+
+		if (exists == true) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Used to ensure the same order of the sets are used so duplicate DFA states cannot be added
+	 * @param LinkedHashSet test: The current set you are testing if is already in your stateSet
+	 * @param LinkedHashSEt stateSet: The current list of sets you have
+	 * @return The version of the set that is already in your stateSet
+	 */
+	private LinkedHashSet<NFAState> filter(LinkedHashSet<NFAState> test, LinkedHashSet<LinkedHashSet<NFAState>> stateSet) {
+		for (Set<NFAState> x: stateSet) {
+			if (x.containsAll(test) && test.containsAll(x)) {
+				return (LinkedHashSet<NFAState>) x;
+			}
+		}
+		return test;
+	}
 }

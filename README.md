@@ -20,7 +20,7 @@ c d e               <- Other States\
 \
 a0a a1b bea         <- Transitions (State->Transition Character->State)\
 0                   < \
-1                   < \
-00                  < - - Individual test strings. Program will output TRUE/FALSE if string passes the DFA (e is an empty string) \
-101                 <  
+1                   << \
+00                  <<< - - Individual test strings. Program will output TRUE/FALSE if string passes the DFA (e is an empty string) \
+101                 <<  
 e                   <

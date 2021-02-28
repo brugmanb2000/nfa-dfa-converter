@@ -14,13 +14,13 @@ From user input, we would be able to create an NFA object similar to what one mi
 If wanting to test this project, the user would create a text file formatted as such below:
 
 
-b                   <- Final States
-a                   <- Start State
-c d e               <- Other States
-
-a0a a1b bea         <- Transitions (State->Transition Character->State) \n
-0                   < \n
-1                   < \ \n
-00                  < - - Individual test strings. Program will output TRUE/FALSE if string passes the DFA (e is an empty string) \n
-101                 < / \n
-e                   < \n
+b                   <- Final States\
+a                   <- Start State\
+c d e               <- Other States\
+\
+a0a a1b bea         <- Transitions (State->Transition Character->State)\
+0                   <\
+1                   <\
+00                  < - - Individual test strings. Program will output TRUE/FALSE if string passes the DFA (e is an empty string)\
+101                 <\  
+e                   <\

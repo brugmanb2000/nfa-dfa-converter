@@ -24,3 +24,6 @@ a0a a1b bea         <- Transitions (State->Transition Character->State)\
 00                  <<< - - Individual test strings. Program will output TRUE/FALSE if string passes the DFA (e is an empty string) \
 101                 <<  
 e                   <
+
+
+Note: Some starter code was given by professor to give a structure to the project, but implementation was written by myself. 

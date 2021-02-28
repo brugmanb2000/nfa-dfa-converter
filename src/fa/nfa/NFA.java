@@ -13,7 +13,7 @@ import fa.dfa.DFA;
 /**
  * This class is used to create and NFA and also to convert the NFA created into a DFA
  * 
- * @author Brandon Brugman, Will Lawrence
+ * @author Brandon Brugman
  *
  */
 
